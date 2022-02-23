@@ -93,16 +93,15 @@ int main()
     assert(db->Get(ReadOptions(), handles[2], "key2", &value).ok());
     assert(value == "value2");
 
+    //删除/tmp/sst1/下所有sst文件
 
-    //删除列族以及对应的sst  
-    for (int i = 1; i <= 2; ++i) assert(db->DropColumnFamily(handles[i]).ok());
-
+    assert(db->DropColumnFamily(handles[1]).ok());
+    assert(db->DestroyColumnFamilyHandle(handles[1]).ok());
+    while (1)
+        ;
     // close db
-    for (auto handle : handles) {
-        s = db->DestroyColumnFamilyHandle(handle);
-        assert(s.ok());
-    }
-
+    assert(db->DropColumnFamily(handles[2]).ok());
+    assert(db->DestroyColumnFamilyHandle(handles[2]).ok());
     delete db;
 
     return 0;
