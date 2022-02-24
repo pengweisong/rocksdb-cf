@@ -35,22 +35,20 @@ int main()
 {
     // open DB
     Options options;
-    ColumnFamilyOptions cf1_options, cf2_options;
-    ColumnFamilyHandle *cf1 = nullptr, *cf2 = nullptr;
-    DB *db = nullptr;
-    DbPath path1, path2;
-
     options.create_if_missing = true;
-    //配置列族的写缓冲区大小
+    DB *db = nullptr;
+    Status s = DB::Open(options, kDBPath, &db);
+    assert(s.ok());
+
+    ColumnFamilyOptions cf1_options, cf2_options;
     cf1_options.write_buffer_size = 80920;
     cf2_options.write_buffer_size = 99999;
+    DbPath path1, path2;
     path1.path = "/tmp/cf_one_path";
     path2.path = "/tmp/cf_two_path";
     cf1_options.cf_paths = {path1};
     cf2_options.cf_paths = {path2};
-
-    Status s = DB::Open(options, kDBPath, &db);
-    assert(s.ok());
+    ColumnFamilyHandle *cf1 = nullptr, *cf2 = nullptr;
 
     s = db->CreateColumnFamily(cf1_options, "cf_one", &cf1);
     assert(s.ok());

@@ -39,18 +39,19 @@ std::string kCfPath2 = "/tmp/sst_files2";
 int main()
 {
     Options options;
-    ColumnFamilyOptions cf1_options, cf2_options;
-    DbPath path1, path2;
-    DB *db = nullptr;
-    ColumnFamilyHandle *cf1 = nullptr, *cf2 = nullptr;
     options.create_if_missing = true;
+    DB *db = nullptr;
+
+    Status s = DB::Open(options, kDBPath, &db);
+    assert(s.ok());
+
+    ColumnFamilyOptions cf1_options, cf2_options;
+    ColumnFamilyHandle *cf1 = nullptr, *cf2 = nullptr;
+    DbPath path1, path2;
     path1.path = kCfPath1;
     path2.path = kCfPath2;
     cf1_options.cf_paths = {path1};
     cf2_options.cf_paths = {path2};
-
-    Status s = DB::Open(options, kDBPath, &db);
-    assert(s.ok());
 
     s = db->CreateColumnFamily(cf1_options, "cf1", &cf1);
     assert(s.ok());
@@ -71,7 +72,6 @@ int main()
 
     //删除cf1 对应的sst
     assert(db->DropColumnFamily(cf1).ok());
-    // close db
     assert(db->DestroyColumnFamilyHandle(cf1).ok());
     assert(db->DestroyColumnFamilyHandle(cf2).ok());
     delete db;

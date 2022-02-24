@@ -75,17 +75,17 @@ void MakeRandomKV(map<string, string> &kv, int n)
 }
 void OpenFirstDb()
 {
-    Options options;
     DB *db1 = nullptr;
-    ColumnFamilyHandle *cf = nullptr;
-    ColumnFamilyOptions cf_options;
-    rocksdb::Checkpoint *checkpoint = nullptr;
+    Options options;
     options.create_if_missing = true;
     options.db_write_buffer_size = 100000;
-    cf_options.write_buffer_size = 80920;
 
     Status s = DB::Open(options, kDBPath1, &db1);
     assert(s.ok());
+
+    ColumnFamilyHandle *cf = nullptr;
+    ColumnFamilyOptions cf_options;
+    cf_options.write_buffer_size = 80920;
 
     s = db1->CreateColumnFamily(cf_options, "first_cf", &cf);
     assert(s.ok());
@@ -93,6 +93,8 @@ void OpenFirstDb()
     for (auto iter = kv.begin(); iter != kv.end(); ++iter) {
         assert(db1->Put(WriteOptions(), cf, iter->first, iter->second).ok());
     }
+
+    rocksdb::Checkpoint *checkpoint = nullptr;
 
     //导出到source_column_family_path下
     assert(Checkpoint::Create(db1, &checkpoint).ok());
@@ -107,22 +109,22 @@ void OpenFirstDb()
 
 void OpenSecondDb()
 {
-    Options options;
-    ColumnFamilyOptions target_options;
-    ImportColumnFamilyOptions importColumnFamilyOptions;
     DB *db2 = nullptr;
-    ColumnFamilyHandle *import_cf = nullptr;
-    ColumnFamilyOptions cf_options;
-    DbPath path;
+    Options options;
     options.create_if_missing = true;
     options.db_write_buffer_size = 100000;
-    target_options.write_buffer_size = 80920;
-    importColumnFamilyOptions.move_files = true;
-    path.path = target_column_family_path;
-    target_options.cf_paths = {path};
 
     Status s = DB::Open(options, kDBPath2, &db2);
     assert(s.ok());
+
+    DbPath path;
+    path.path = target_column_family_path;
+    ColumnFamilyOptions target_options;
+    target_options.write_buffer_size = 80920;
+    target_options.cf_paths = {path};
+    ImportColumnFamilyOptions importColumnFamilyOptions;
+    importColumnFamilyOptions.move_files = true;
+    ColumnFamilyHandle *import_cf = nullptr;
 
     s = db2->CreateColumnFamilyWithImport(
         target_options, "second_cf", importColumnFamilyOptions,
