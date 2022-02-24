@@ -35,54 +35,27 @@ int main()
 {
     // open DB
     Options options;
+    ColumnFamilyOptions cf1_options, cf2_options;
+    ColumnFamilyHandle *cf1 = nullptr, *cf2 = nullptr;
+    DB *db = nullptr;
 
     options.create_if_missing = true;
-    DB *db;
-    Status s = DB::Open(options, kDBPath, &db);
-    assert(s.ok());
-
-    // create column family
-    ColumnFamilyHandle *cf1 = nullptr, *cf2 = nullptr;
-
-    ColumnFamilyOptions cf1_options, cf2_options;
-
     //配置列族的写缓冲区大小
     cf1_options.write_buffer_size = 80920;
     cf2_options.write_buffer_size = 99999;
+
+    Status s = DB::Open(options, kDBPath, &db);
+    assert(s.ok());
 
     s = db->CreateColumnFamily(cf1_options, "cf_one", &cf1);
     assert(s.ok());
     s = db->CreateColumnFamily(cf2_options, "cf_two", &cf2);
     assert(s.ok());
 
-    s = db->DestroyColumnFamilyHandle(cf1);
-    assert(s.ok());
-    s = db->DestroyColumnFamilyHandle(cf2);
-    assert(s.ok());
-    delete db;
-
-    std::vector<ColumnFamilyDescriptor> column_families;
-
-    //必须打开所有已经存在的列族
-    column_families.push_back(ColumnFamilyDescriptor(kDefaultColumnFamilyName,
-                                                     ColumnFamilyOptions()));
-
-    column_families.push_back(ColumnFamilyDescriptor("cf_one", cf1_options));
-    column_families.push_back(ColumnFamilyDescriptor("cf_two", cf2_options));
-    std::vector<ColumnFamilyHandle *> handles;
-    s = DB::Open(DBOptions(), kDBPath, column_families, &handles, &db);
-
-    assert(s.ok());
-
-    //删除列族以及对应的sst
-    for (int i = 1; i <= 2; ++i) assert(db->DropColumnFamily(handles[i]).ok());
-
-    // close db
-    for (auto handle : handles) {
-        s = db->DestroyColumnFamilyHandle(handle);
-        assert(s.ok());
-    }
-
+    assert(db->DropColumnFamily(cf1).ok());
+    assert(db->DropColumnFamily(cf2).ok());
+    assert(db->DestroyColumnFamilyHandle(cf1).ok());
+    assert(db->DestroyColumnFamilyHandle(cf2).ok());
     delete db;
 
     return 0;
