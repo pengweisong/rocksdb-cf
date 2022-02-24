@@ -90,6 +90,8 @@ void OpenFirstDb()
     ColumnFamilyOptions cf_options;
     cf_options.write_buffer_size = 80920;
 
+
+
     s = db1->CreateColumnFamily(cf_options, "first_cf", &cf);
 
     assert(s.ok());
@@ -117,10 +119,15 @@ void OpenFirstDb()
     }
     assert(s.ok());
 
+
+    //导出到souce_column_family_path下
     rocksdb::Checkpoint *checkpoint = nullptr;
     assert(Checkpoint::Create(db1, &checkpoint).ok());
     s = checkpoint->ExportColumnFamily(handles[1], source_column_family_path,
                                        &export_import_files_meta_data);
+    assert(s.ok());
+
+    s = db1->DropColumnFamily(handles[1]);
     assert(s.ok());
 
     s = db1->DestroyColumnFamilyHandle(handles[1]);
@@ -150,7 +157,7 @@ void OpensecondDB()
     paths.emplace_back(path);
 
     target_options.cf_paths = paths;
-
+    importColumnFamilyOptions.move_files = true;
     s = db2->CreateColumnFamilyWithImport(
         target_options, "second_cf", importColumnFamilyOptions,
         *export_import_files_meta_data, &import_target);
@@ -161,6 +168,7 @@ void OpensecondDB()
             db2->Get(ReadOptions(), import_target, iter->first, &value).ok());
 
         assert(value == iter->second);
+        value.clear();
     }
 
     s = db2->DestroyColumnFamilyHandle(import_target);
@@ -168,8 +176,7 @@ void OpensecondDB()
 
 int main()
 {
-
-    MakeRandomKV(kv,1000);
+    MakeRandomKV(kv, 100);
     OpenFirstDb();
     OpensecondDB();
 
