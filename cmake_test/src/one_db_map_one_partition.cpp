@@ -8,7 +8,10 @@ std::string DBPartition::kDefaultDBPreixPath;
 
 DBPartition::~DBPartition()
 {
-    for (auto &it : id_map_to_db_) delete it;
+    for (auto &it : id_map_to_db_) {
+        rocksdb::Status s = it->Close();
+        assert(s.ok());
+    }
 }
 
 rocksdb::Status DBPartition::CreateDB(uint64_t db_num,
@@ -59,7 +62,7 @@ rocksdb::Status DBPartition::GetVertex(const rocksdb::ReadOptions &options,
 {
     std::string db_name = id_map_to_name_[db_id];
     manager::Vertex vertex(vertex_id, db_name, db_name.size());
-    return id_map_to_db_[db_id]->Get(options, nullptr, vertex.GetRep(), value);
+    return id_map_to_db_[db_id]->Get(options, vertex.GetRep(), value);
 }
 
 rocksdb::Status DBPartition::GetOutEdgeByVertex(
@@ -88,12 +91,12 @@ rocksdb::Status DBPartition::GetByEdgeType(
 
     manager::Edge edge(&src_vertex, &dest_vertex, num, 8);
 
-    return id_map_to_db_[db_id]->Get(options, nullptr, edge.GetRep(), value);
+    return id_map_to_db_[db_id]->Get(options, edge.GetRep(), value);
 }
 rocksdb::Iterator *DBPartition::NewIterator(const rocksdb::ReadOptions &options,
                                             uint64_t db_id)
 {
-    return id_map_to_db_[db_id]->NewIterator(options, nullptr);
+    return id_map_to_db_[db_id]->NewIterator(options);
 }
 }  // namespace manager
 

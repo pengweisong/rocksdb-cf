@@ -8,6 +8,7 @@
 
 namespace manager {
 
+DEFINE_uint64(kDefaultValueSize, 100, "Default Generate Value Size ");
 DEFINE_uint64(kDefaultPartitionNum, 100,
               "Create Column Family Number Or DB Num");
 DEFINE_uint64(kDefaultNodeTypeLen, 9, "VertexOptions kDefaultNodeTypeLen ");
@@ -21,8 +22,6 @@ DEFINE_uint64(kDefaultVertexNum, 50, "Create DefaultVertexNum ");
 //针对CFPartition单独的参数
 DEFINE_string(kCFPartitionDBPath, "/tmp/CFPartition",
               "CFPartition Default DB Path ");
-DEFINE_string(kCFPartitionCFPreixName, "CF",
-              "CFPartition Column Family Preix Name ");  // Name=preixname+i;
 
 //针对DBPartition单独的参数
 DEFINE_string(kDBPartitionDBPreixName, "/tmp/DBPartition",
