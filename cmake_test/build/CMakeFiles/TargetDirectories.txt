@@ -1,3 +1,0 @@
-/home/kai.liu/cmake_test/build/CMakeFiles/rebuild_cache.dir
-/home/kai.liu/cmake_test/build/CMakeFiles/edit_cache.dir
-/home/kai.liu/cmake_test/build/CMakeFiles/two_comparator.dir
