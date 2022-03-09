@@ -1,9 +1,9 @@
 
-#include "one_cf_map_one_partition.h"
-#include "generate_vertex_edge.h"
 
-using namespace manager;
-namespace manager {
+#include "CFPartition.h"
+#include "Edge.h"
+#include "Vertex.h"
+
 std::string CFPartition::kDefaultDBPath;
 
 CFPartition::CFPartition(const rocksdb::Options &options) : db_options_(options)
@@ -22,7 +22,7 @@ CFPartition::~CFPartition()
     delete db_;
 }
 
-void CFPartition::CreateCF(
+rocksdb::Status CFPartition::CreateCF(
     uint64_t cf_num,
     const std::vector<rocksdb::ColumnFamilyOptions> &cf_options)
 {
@@ -30,32 +30,43 @@ void CFPartition::CreateCF(
     cf_id_map_to_handle_.resize(cf_num + 1);
     for (uint64_t i = 0; i < cf_num; ++i) {
         rocksdb::ColumnFamilyHandle *cf = nullptr;
-
         std::string cf_name = CFPartition::kDefaultDBPath + std::to_string(i);
+
         s = db_->CreateColumnFamily(cf_options[i], cf_name, &cf);
-        assert(s.ok());
+        if (!s.ok()) return s;
 
         cf_id_to_name_[cf->GetID()] = cf_name;
+
         cf_id_map_to_handle_[cf->GetID()] = cf;
+
         cf_id_to_option_[cf->GetID()] = cf_options[i];
     }
+    return s;
 }
-void CFPartition::CreateCF(uint64_t cf_num,
-                           const rocksdb::ColumnFamilyOptions &cf_options)
+rocksdb::Status CFPartition::CreateCF(
+    uint64_t cf_num, const rocksdb::ColumnFamilyOptions &cf_options,
+    const std::vector<std::string> &node_type)
 {
+    assert(cf_num == static_cast<uint64_t>(node_type.size()));
+
     rocksdb::Status s;
     cf_id_map_to_handle_.resize(cf_num + 1);
     for (uint64_t i = 0; i < cf_num; ++i) {
         rocksdb::ColumnFamilyHandle *cf = nullptr;
-
         std::string cf_name = CFPartition::kDefaultDBPath + std::to_string(i);
+
         s = db_->CreateColumnFamily(cf_options, cf_name, &cf);
-        assert(s.ok());
+        if (!s.ok()) return s;
+
+        cf_id_to_node_type_[cf->GetID()] = node_type[i];
 
         cf_id_to_name_[cf->GetID()] = cf_name;
+
         cf_id_map_to_handle_[cf->GetID()] = cf;
+
         cf_id_to_option_[cf->GetID()] = cf_options;
     }
+    return s;
 }
 
 rocksdb::Status CFPartition::Put(const rocksdb::WriteOptions &options,
@@ -69,8 +80,9 @@ rocksdb::Status CFPartition::GetVertex(const rocksdb::ReadOptions &options,
                                        std::string *value)
 {
     //一个partition对应一个CF node_type相同
-    manager::Vertex vertex(vertex_id, cf_id_to_name_[cf_id],
-                           cf_id_to_name_[cf_id].size());
+    //
+
+    Vertex vertex(vertex_id, cf_id_to_node_type_[cf_id]);
     return db_->Get(options, cf_id_map_to_handle_[cf_id], vertex.GetRep(),
                     value);
 }
@@ -93,13 +105,11 @@ rocksdb::Status CFPartition::GetByEdgeType(
     const rocksdb::ReadOptions &options, uint64_t cf_id, uint64_t src_vertex_id,
     uint64_t dest_vertex_id, std::string *value, bool get_out_edge)
 {
-    std::string cf_name = cf_id_to_name_[cf_id];
-    manager::Vertex src_vertex(src_vertex_id, cf_name, cf_name.size());
-    manager::Vertex dest_vertex(dest_vertex_id, cf_name, cf_name.size());
+    std::string node_type = cf_id_to_node_type_[cf_id];
 
     int32_t num = (get_out_edge == true) ? 1 : -1;
 
-    manager::Edge edge(&src_vertex, &dest_vertex, num, 8);
+    Edge edge(src_vertex_id, dest_vertex_id, node_type, num, 8);
     return db_->Get(options, cf_id_map_to_handle_[cf_id], edge.GetRep(), value);
 }
 
@@ -130,5 +140,4 @@ rocksdb::Status CFPartition::FlushAllCF(
 
     return s;
 }
-}  // namespace manager
 

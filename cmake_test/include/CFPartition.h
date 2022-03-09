@@ -1,23 +1,28 @@
 
-#ifndef __ONE_CF_MAP_ONE_PARTITION_H_
-#define __ONE_CF_MAP_ONE_PARTITION_H_
+#pragma once
+
+#include <unordered_map>
 
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
 
-#include <unordered_map>
-namespace manager {
-
-class Vertex;
 class CFPartition {
 public:
     explicit CFPartition(const rocksdb::Options &options);
-    void CreateCF(uint64_t cf_num,
-                  const std::vector<rocksdb::ColumnFamilyOptions> &cf_options);
-    void CreateCF(uint64_t cf_num,
-                  const rocksdb::ColumnFamilyOptions &cf_options);
+    rocksdb::Status CreateCF(
+        uint64_t cf_num,
+        const std::vector<rocksdb::ColumnFamilyOptions> &cf_options);
+
+    rocksdb::Status CreateCF(uint64_t cf_num,
+                             const rocksdb::ColumnFamilyOptions &cf_options,
+                             const std::vector<std::string> &node_type);
 
     std::string GetCFName(uint64_t cf_id) { return cf_id_to_name_[cf_id]; }
+
+    std::string GetNodeType(uint64_t cf_id)
+    {
+        return cf_id_to_node_type_[cf_id];
+    }
 
     rocksdb::Status Put(const rocksdb::WriteOptions &options, uint64_t cf_id,
                         const rocksdb::Slice &key, const rocksdb::Slice &value);
@@ -59,14 +64,16 @@ private:
                                   bool get_out_edge = true);
 
     rocksdb::DB *db_;
+
     rocksdb::Options db_options_;
 
     static std::string kDefaultDBPath;
 
     std::vector<rocksdb::ColumnFamilyHandle *> cf_id_map_to_handle_;
-    std::unordered_map<uint64_t, std::string> cf_id_to_name_;
-    std::unordered_map<uint64_t, rocksdb::ColumnFamilyOptions> cf_id_to_option_;
-};
-};  // namespace manager
 
-#endif
+    std::unordered_map<uint64_t, std::string> cf_id_to_name_;
+
+    std::unordered_map<uint64_t, rocksdb::ColumnFamilyOptions> cf_id_to_option_;
+
+    std::unordered_map<uint64_t, std::string> cf_id_to_node_type_;
+};

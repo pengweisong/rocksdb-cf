@@ -1,24 +1,29 @@
 
-#ifndef __ONE_DB_MAP_ONE_PARTITION_H_
-#define __ONE_DB_MAP_ONE_PARTITION_H_
+#pragma once
 
 #include <vector>
 
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
 
-namespace manager {
 class DBPartition {
 public:
     explicit DBPartition(){};
     ~DBPartition();
 
-    rocksdb::Status CreateDB(uint64_t db_num, const rocksdb::Options &options);
+    rocksdb::Status CreateDB(uint64_t db_num, const rocksdb::Options &options,
+                             const std::vector<std::string> &node_type);
+
     rocksdb::Status CreateDB(uint64_t db_num,
                              const std::vector<rocksdb::Options> &options);
 
     rocksdb::Status Put(const rocksdb::WriteOptions &options, uint64_t db_id,
                         const rocksdb::Slice &key, const rocksdb::Slice &value);
+
+    std::string GetNodeType(uint64_t db_id)
+    {
+        return id_map_to_node_type_[db_id];
+    }
 
     rocksdb::Status GetVertex(const rocksdb::ReadOptions &options,
                               uint64_t db_id, uint64_t vertex_id,
@@ -50,14 +55,15 @@ private:
                                   uint64_t db_id, uint64_t src_vertex_id,
                                   uint64_t dest_vertex_id, std::string *value,
                                   bool get_out_edge = true);
+
     std::vector<rocksdb::DB *> id_map_to_db_;
+
     std::vector<rocksdb::Options> options_;
 
     static std::string kDefaultDBPreixPath;
 
     std::unordered_map<uint64_t, std::string> id_map_to_name_;
+
+    std::unordered_map<uint64_t, std::string> id_map_to_node_type_;
 };
 
-}  // namespace manager
-
-#endif
