@@ -3,14 +3,14 @@
 #include <cstdint>
 #include <iostream>
 
-#include "Generator.h"
+#include "KVEngine.h"
+#include "Options.h"
+#include "Parts.h"
 #include "VertexEdge.h"
 #include "rocksdb/db.h"
+#include "rocksdb/slice.h"
 
 using PartId = int32_t;
-
-class KVEngine;
-class Slice;
 
 class Part {
  public:
@@ -41,7 +41,7 @@ class Part {
 
 class Space {
  public:
-  Space(const GeneratorOptions& options);
+  Space(const Options& options);
 
   void addVertex(PartId partId, const VertexKey& key, const rocksdb::Slice& value);
 
@@ -60,6 +60,6 @@ class Space {
   ~Space();
 
  private:
-  GeneratorOptions options_;
+  Options options_;
   std::map<PartId, std::unique_ptr<Part>> parts_;
 };

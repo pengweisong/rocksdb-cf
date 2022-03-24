@@ -4,22 +4,14 @@
 #include <memory>
 #include <string>
 
-class Space;
+#include "Options.h"
+#include "Parts.h"
 
 using PartId = int32_t;
 
-struct GeneratorOptions {
-  int32_t edgeNum;
-  int32_t vertexNum;
-  int32_t valueSize;
-  int32_t partNum;
-  bool useCf;
-  std::string dataPath;
-};
-
 class Generator {
  public:
-  Generator(const GeneratorOptions& options);
+  Generator(const Options& options);
 
   ~Generator();
 
@@ -35,6 +27,6 @@ class Generator {
 
  private:
   static std::string kdefaultValue;
-  GeneratorOptions options_;
+  Options options_;
   std::unique_ptr<Space> space_;
 };

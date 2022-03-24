@@ -1,15 +1,5 @@
 #include "KVEngine.h"
 
-/*rocksdb::DB* KVEngine::getDB() {}
-
-rocksdb::Iterator* KVEngine::newIterator() {}
-
-void KVEngine::put(const rocksdb::Slice& k, const rocksdb::Slice& v) {}
-
-void KVEngine::get(const rocksdb::Slice& k, std::string* v) {}
-
-void KVEngine::remove(const rocksdb::Slice& k) {}
-*/
 KVEngine::~KVEngine() {}
 
 CFEngine::CFEngine(rocksdb::DB* db, const std::string& cfName, const std::string& path) {

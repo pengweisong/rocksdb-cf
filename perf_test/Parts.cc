@@ -1,6 +1,4 @@
-#include "KVEngine.h"
 #include "Parts.h"
-#include "rocksdb/slice.h"
 
 Part::Part(PartId id, KVEngine* engine) : id_(id), engine_(engine) {}
 
@@ -37,7 +35,7 @@ rocksdb::Iterator* Part::newIterator() {
   return engine_->newIterator();
 }
 
-Space::Space(const GeneratorOptions& options) : options_(options) {
+Space::Space(const Options& options) : options_(options) {
   if (options_.useCf) {
     rocksdb::DB* db = nullptr;
     rocksdb::Options opts;

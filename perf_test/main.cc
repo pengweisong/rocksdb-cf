@@ -6,7 +6,8 @@
 #include <memory>
 #include <string>
 
-#include "Parts.h"
+#include "Generator.h"
+#include "Options.h"
 
 static const std::string cfPartition = "/tmp/CF";
 static const std::string dbPartition = "/tmp/";  // rocksdb创建级联目录有坑
@@ -16,29 +17,31 @@ static const int partNum = 10;
 static const int valueSize = 1000;
 
 void TestCF(PartId partId) {
-  GeneratorOptions generatorOptions;
-  generatorOptions.useCf = true;
-  generatorOptions.edgeNum = edgeNum;
-  generatorOptions.vertexNum = vertexNum;
-  generatorOptions.dataPath = cfPartition;
-  generatorOptions.valueSize = valueSize;
-  generatorOptions.partNum = partNum;
+  Options options;
+  options.useCf = true;
+  options.edgeNum = edgeNum;
+  options.vertexNum = vertexNum;
+  options.dataPath = cfPartition;
+  options.valueSize = valueSize;
+  options.partNum = partNum;
+  options.randomKey = false;
 
-  std::unique_ptr<Generator> generator(new Generator(generatorOptions));
+  std::unique_ptr<Generator> generator(new Generator(options));
 
   generator->addVertex(partId);
   generator->addEdge(partId);
 }
 void TestDB(PartId partId) {
-  GeneratorOptions generatorOptions;
-  generatorOptions.useCf = false;
-  generatorOptions.edgeNum = edgeNum;
-  generatorOptions.vertexNum = vertexNum;
-  generatorOptions.dataPath = cfPartition;
-  generatorOptions.valueSize = valueSize;
-  generatorOptions.partNum = partNum;
+  Options options;
+  options.useCf = false;
+  options.edgeNum = edgeNum;
+  options.vertexNum = vertexNum;
+  options.dataPath = cfPartition;
+  options.valueSize = valueSize;
+  options.partNum = partNum;
+  options.randomKey = false;
 
-  std::unique_ptr<Generator> generator(new Generator(generatorOptions));
+  std::unique_ptr<Generator> generator(new Generator(options));
 
   generator->addVertex(partId);
   generator->addEdge(partId);
