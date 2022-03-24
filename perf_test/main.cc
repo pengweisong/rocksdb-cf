@@ -1,31 +1,54 @@
+#include <dirent.h>
+
 #include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <memory>
 #include <string>
 
-#include "VertexEdge.h"
+#include "Parts.h"
 
-std::string kDBPath = "/tmp/different_column_family_test";
+static const std::string cfPartition = "/tmp/CF";
+static const std::string dbPartition = "/tmp/";  // rocksdb创建级联目录有坑
+static const int edgeNum = 1000;
+static const int vertexNum = 1000;
+static const int partNum = 10;
+static const int valueSize = 1000;
 
+void TestCF(PartId partId) {
+  GeneratorOptions generatorOptions;
+  generatorOptions.useCf = true;
+  generatorOptions.edgeNum = edgeNum;
+  generatorOptions.vertexNum = vertexNum;
+  generatorOptions.dataPath = cfPartition;
+  generatorOptions.valueSize = valueSize;
+  generatorOptions.partNum = partNum;
+
+  std::unique_ptr<Generator> generator(new Generator(generatorOptions));
+
+  generator->addVertex(partId);
+  generator->addEdge(partId);
+}
+void TestDB(PartId partId) {
+  GeneratorOptions generatorOptions;
+  generatorOptions.useCf = false;
+  generatorOptions.edgeNum = edgeNum;
+  generatorOptions.vertexNum = vertexNum;
+  generatorOptions.dataPath = cfPartition;
+  generatorOptions.valueSize = valueSize;
+  generatorOptions.partNum = partNum;
+
+  std::unique_ptr<Generator> generator(new Generator(generatorOptions));
+
+  generator->addVertex(partId);
+  generator->addEdge(partId);
+}
+void Test(PartId partId) {
+  TestCF(partId);
+
+  TestDB(partId);
+}
 int main() {
-  Edge e;
-  e.type = 1;
-  e.src = 2;
-  e.dst = 3;
-  e.rank = 100;
-  e.version = 0;
-
-  auto s = e.toString();
-  auto e1 = Edge::fromString(s);
-
-  assert(e1.type == e.type);
-  assert(e1.src == e.src);
-  assert(e1.dst == e.dst);
-  assert(e1.rank == e.rank);
-  assert(e1.version == e.version);
-
-  std::cout << e1.rank << std::endl;
-
+  Test(0);
   return 0;
 }
