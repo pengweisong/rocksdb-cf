@@ -17,11 +17,19 @@ class Generator {
 
   void addVertex(PartId partId);
 
-  void addEdge(PartId partId);
-
   void removeVertex(PartId partId);
 
+  void getVertex(PartId partId, std::vector<std::string>* value);
+
+  void addEdge(PartId partId);
+
   void removeEdge(PartId partId);
+
+  void getEdge(PartId partId, std::vector<std::string>* value);
+
+  void scanForPrev(PartId partId);
+
+  void scanForNext(PartId partId);
 
   static std::string makeRandomString(int32_t size);
 

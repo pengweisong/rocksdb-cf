@@ -36,7 +36,7 @@ void TestDB(PartId partId) {
   options.useCf = false;
   options.edgeNum = edgeNum;
   options.vertexNum = vertexNum;
-  options.dataPath = cfPartition;
+  options.dataPath = dbPartition;
   options.valueSize = valueSize;
   options.partNum = partNum;
   options.randomKey = false;

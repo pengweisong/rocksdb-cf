@@ -22,6 +22,39 @@ void Generator::addVertex(PartId partId) {
     space_->addVertex(partId, key, makeRandomString(options_.valueSize));
   }
 }
+
+void Generator::removeVertex(PartId partId) {
+  for (int32_t i = 0; i < options_.vertexNum; ++i) {
+    VertexKey key;
+    if (options_.randomKey == false) {
+      key.type = i;
+      key.id = i;
+      key.version = i;
+    } else {
+      srand(clock());
+      key.type = rand() % options_.vertexNum;
+      key.id = rand() % options_.vertexNum;
+      key.version = rand() % options_.vertexNum;
+    }
+    space_->removeVertex(partId, key);
+  }
+}
+
+void Generator::getVertex(PartId partId, std::vector<std::string>* values) {
+  values->reserve(options_.vertexNum);
+  for (int32_t i = 0; i < options_.vertexNum; ++i) {
+    if (options_.randomKey == false) {
+      VertexKey key;
+      key.type = i;
+      key.id = i;
+      key.version = i;
+      std::string value;
+      space_->getVertex(partId, key, &value);
+      values->emplace_back(value);
+    }
+  }
+}
+
 void Generator::addEdge(PartId partId) {
   for (int32_t i = 0; i < options_.edgeNum; ++i) {
     EdgeKey key;
@@ -42,22 +75,7 @@ void Generator::addEdge(PartId partId) {
     space_->addEdge(partId, key, makeRandomString(options_.valueSize));
   }
 }
-void Generator::removeVertex(PartId partId) {
-  for (int32_t i = 0; i < options_.vertexNum; ++i) {
-    VertexKey key;
-    if (options_.randomKey == false) {
-      key.type = i;
-      key.id = i;
-      key.version = i;
-    } else {
-      srand(clock());
-      key.type = rand() % options_.vertexNum;
-      key.id = rand() % options_.vertexNum;
-      key.version = rand() % options_.vertexNum;
-    }
-    space_->removeVertex(partId, key);
-  }
-}
+
 void Generator::removeEdge(PartId partId) {
   for (int32_t i = 0; i < options_.edgeNum; ++i) {
     EdgeKey key;
@@ -76,6 +94,37 @@ void Generator::removeEdge(PartId partId) {
       if (key.src == key.dst) ++key.dst;
     }
     space_->removeEdge(partId, key);
+  }
+}
+
+void Generator::getEdge(PartId partId, std::vector<std::string>* values) {
+  values->reserve(options_.edgeNum);
+  for (int32_t i = 0; i < options_.edgeNum; ++i) {
+    if (options_.randomKey = false) {
+      EdgeKey key;
+      key.type = i;
+      key.src = i;
+      key.dst = options_.edgeNum - i;
+      key.rank = i;
+      key.version = i;
+      std::string value;
+      space_->getEdge(partId, key, &value);
+      values->emplace_back(value);
+    }
+  }
+}
+
+void Generator::scanForNext(PartId partId) {
+  rocksdb::Iterator* iter = space_->newIterator(partId);
+
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+  }
+}
+
+void Generator::scanForPrev(PartId partId) {
+  rocksdb::Iterator* iter = space_->newIterator(partId);
+
+  for (iter->SeekToLast(); iter->Valid(); iter->Prev()) {
   }
 }
 
