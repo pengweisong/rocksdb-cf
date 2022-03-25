@@ -32,9 +32,16 @@ class Part {
 
   void getEdge(const EdgeKey& e, std::string* value);
 
+  void getNeighbor(const VertexKey& v, std::vector<EdgeKey>* edges, bool isInEdge = true);
+
   rocksdb::Iterator* newIterator();
 
  private:
+  void getEdges(const VertexKey& v,
+                const std::string& key,
+                std::vector<EdgeKey>* edges,
+                bool isInEdge);
+
   KVEngine* engine_;
   PartId id_;
 };

@@ -1,10 +1,13 @@
 #include <dirent.h>
+#include <unistd.h>
 
 #include <cassert>
+#include <chrono>
 #include <cstdio>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "Generator.h"
 #include "Options.h"
@@ -16,7 +19,7 @@ static const int vertexNum = 1000;
 static const int partNum = 10;
 static const int valueSize = 1000;
 
-void TestCF(PartId partId) {
+void TestCF(PartId partId, bool needWait) {
   Options options;
   options.useCf = true;
   options.edgeNum = edgeNum;
@@ -28,8 +31,16 @@ void TestCF(PartId partId) {
 
   std::unique_ptr<Generator> generator(new Generator(options));
 
-  generator->addVertex(partId);
-  generator->addEdge(partId);
+  generator->start(partId);
+
+  if (needWait) {
+    //不加sleep有可能死锁 因为先调用Generator的析构函数
+    //而running线程去拿主线程的锁
+    std::this_thread::sleep_for(std::chrono::microseconds(10000));
+    generator->waitAndStop();
+  } else {
+    generator->stop();
+  }
 }
 void TestDB(PartId partId) {
   Options options;
@@ -42,16 +53,17 @@ void TestDB(PartId partId) {
   options.randomKey = false;
 
   std::unique_ptr<Generator> generator(new Generator(options));
-
-  generator->addVertex(partId);
-  generator->addEdge(partId);
 }
 void Test(PartId partId) {
-  TestCF(partId);
+  TestCF(partId, true);
 
   TestDB(partId);
 }
-int main() {
-  Test(0);
+
+int main(int argc, char **argv) {
+  bool needWait = true;
+  if (argc > 1) needWait = false;
+  TestCF(0, needWait);
+  // Test(0);
   return 0;
 }

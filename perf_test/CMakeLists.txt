@@ -6,6 +6,10 @@ project(rocksdb_test VERSION 0.1
 
 set(CMAKE_CXX_STANDARD 17)
 
+SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb ")
+
+
+
 add_executable(rocksdb_perf  main.cc Generator.cc Parts.cc VertexEdge.cc KVEngine.cc )
 target_compile_features(rocksdb_perf PRIVATE cxx_std_17)
 # rocksdb include and lib
