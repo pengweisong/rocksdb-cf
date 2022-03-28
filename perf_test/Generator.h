@@ -33,40 +33,29 @@ class Generator {
 
   static std::string makeRandomString(int32_t size);
 
-  void startAddVertex(PartId partId);
-
-  void startAddEdge(PartId partId);
-
-  void waitAndStop();
+  void wait();
 
   void stop();
 
   void start(PartId partId);
 
  private:
-  void addVertex(PartId partId);
-
-  void addEdge(PartId partId);
-
   void addEdgeOrVertex(PartId partId, bool addVertex = true);
 
   VertexKey getVertexKey(int32_t num);
 
   EdgeKey getEdgeKey(int32_t num);
 
-  void running();
+  void doTask(PartId partId);
 
   static std::string kdefaultValue;
   Options options_;
   std::unique_ptr<Space> space_;
 
   std::atomic<bool> stop_;
-  std::atomic<bool> needWait_;  //控制直接stop还是等待写入完成stop
+
   std::mutex mutex_;
   std::condition_variable cv_;
 
   Measurement measurement_;
-
-  using threadTask = std::function<void()>;
-  std::deque<threadTask> task_;  //任务队列
 };

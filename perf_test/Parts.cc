@@ -63,11 +63,15 @@ void Part::getEdges(const VertexKey& v,
   if (isInEdge) {
     int32_t dst = -1;
     ::memcpy(&dst, static_cast<const void*>(key.data() + sizeof(int32_t) * 2), sizeof(int32_t));
-    if (dst == v.id) edges->emplace_back(EdgeKey::fromString(key));
+    if (dst == v.id) {
+      edges->emplace_back(EdgeKey::fromString(key));
+    }
   } else {  //出边
     int32_t src = -1;
     ::memcpy(&src, static_cast<const void*>(key.data() + sizeof(int32_t)), sizeof(int32_t));
-    if (src == v.id) edges->emplace_back(EdgeKey::fromString(key));
+    if (src == v.id) {
+      edges->emplace_back(EdgeKey::fromString(key));
+    }
   }
 }
 

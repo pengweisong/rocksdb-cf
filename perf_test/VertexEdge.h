@@ -35,7 +35,9 @@ struct EdgeKey {
 
   EdgeKey(EdgeType type, VertexId src, VertexId dst, int32_t rank, int32_t version)
       : type(type), src(src), dst(dst), rank(rank), version(version) {
-    if (src == dst) ++dst;  //起点终点不能相同
+    if (src == dst) {
+      ++dst;  //起点终点不能相同
+    }
   }
 
   ~EdgeKey() = default;

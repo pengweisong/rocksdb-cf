@@ -3,11 +3,7 @@
 #include <chrono>
 #include <iostream>
 
-enum RequestType : char {
-  OP_AddVertex = 0x01,
-  OP_AddEdge = 0x02
-
-};
+enum RequestType : char { OP_AddVertex = 0x01, OP_AddEdge = 0x02 };
 
 struct Measurement {
   void showTime() {
@@ -25,8 +21,9 @@ struct Measurement {
         break;
       }
     }
-    std::cout << seconds << "\n";
-    std::cout << "Per Seconds requests " << (1.0 / seconds) * requestNum_ << "\n";
+    std::cout << seconds << "---"
+              << "Requests:" << requestNum_ << "\n";
+    std::cout << "Per Seconds requests:" << (1.0 / seconds) * requestNum_ << "\n";
   }
   void start() {
     startTime_ = std::chrono::steady_clock::now();

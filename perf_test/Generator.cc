@@ -5,30 +5,19 @@
 std::string Generator::kdefaultValue = "sakdjjiJKHSAKJ219012I0SLK";
 
 Generator::Generator(const Options& options)
-    : options_(options), space_(new Space(options_)), stop_(false), needWait_(true) {
-  std::thread t(&Generator::running, this);
-  t.detach();
-}
+    : options_(options), space_(new Space(options_)), stop_(false) {}
 
 Generator::~Generator() {
   std::unique_lock<std::mutex> guard(mutex_);
-  std::cout << "Generator dtor\n";
-  while (!stop_ || needWait_) cv_.wait(guard);
+  while (!stop_) cv_.wait(guard);
 }
 
-void Generator::running() {
-  std::unique_lock<std::mutex> guard(mutex_);
-  while (!stop_) {
-    threadTask task = nullptr;
-    while (!stop_ && task_.empty()) {
-      cv_.wait(guard);
-    }
-    if (stop_) return;
-    task = std::move(task_.front());
-    task_.pop_front();
-    //  guard.unlock();
-    std::cout << "running task\n";
-    if (task != nullptr) task();
+void Generator::doTask(PartId partId) {
+  addEdgeOrVertex(partId);
+  addEdgeOrVertex(partId, false);
+  if (stop_ == false) {
+    stop_ = true;
+    cv_.notify_one();
   }
 }
 
@@ -40,30 +29,21 @@ void Generator::addEdgeOrVertex(PartId partId, bool addVertex) {
   measurement_.setRequestType(type);
   measurement_.start();
 
-  while (!stop_ || needWait_) {
-    if (addVertex)
+  while (!stop_) {
+    if (addVertex) {
       space_->addVertex(partId, getVertexKey(i), makeRandomString(options_.valueSize));
-    else
+    } else {
       space_->addEdge(partId, getEdgeKey(i), makeRandomString(options_.valueSize));
+    }
     ++i;
-    if (i == maxNum) break;
+    if (i == maxNum) {
+      break;
+    }
   }
+
   measurement_.stop();
   measurement_.setRequestNum(i);
   measurement_.showTime();
-  if (stop_ == false && task_.empty()) {  //没有任务
-    stop_ = true;
-    needWait_ = false;
-    cv_.notify_one();
-  }
-}
-
-void Generator::addVertex(PartId partId) {
-  addEdgeOrVertex(partId);
-}
-
-void Generator::addEdge(PartId partId) {
-  addEdgeOrVertex(partId, false);
 }
 
 void Generator::removeVertex(PartId partId) {
@@ -132,33 +112,17 @@ EdgeKey Generator::getEdgeKey(int32_t num) {
   }
 }
 
-void Generator::startAddVertex(PartId partId) {
-  std::unique_lock<std::mutex> guard(mutex_);
-  task_.emplace_back(std::bind(&Generator::addVertex, this, partId));
-  cv_.notify_one();
-}
-
-void Generator::startAddEdge(PartId partId) {
-  std::unique_lock<std::mutex> guard(mutex_);
-  task_.emplace_back(std::bind(&Generator::addEdge, this, partId));
-  cv_.notify_one();
-}
-
 void Generator::start(PartId partId) {
-  std::unique_lock<std::mutex> guard(mutex_);
-  task_.emplace_back(std::bind(&Generator::addVertex, this, partId));
-  task_.emplace_back(std::bind(&Generator::addEdge, this, partId));
-  cv_.notify_one();
+  std::thread t(&Generator::doTask, this, partId);
+  t.detach();
 }
 
 void Generator::stop() {
   stop_ = true;
-  needWait_ = false;
+  cv_.notify_one();
 }
 
-void Generator::waitAndStop() {
-  stop_ = true;
-}
+void Generator::wait() {}
 
 std::string Generator::makeRandomString(int32_t size) {
   srand(clock());

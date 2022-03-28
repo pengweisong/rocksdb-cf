@@ -34,10 +34,7 @@ void TestCF(PartId partId, bool needWait) {
   generator->start(partId);
 
   if (needWait) {
-    //不加sleep有可能死锁 因为先调用Generator的析构函数
-    //而running线程去拿主线程的锁
-    std::this_thread::sleep_for(std::chrono::microseconds(10000));
-    generator->waitAndStop();
+    generator->wait();
   } else {
     generator->stop();
   }

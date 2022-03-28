@@ -10,7 +10,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb ")
 
 
 
-add_executable(rocksdb_perf  main.cc Generator.cc Parts.cc VertexEdge.cc KVEngine.cc )
+add_executable(rocksdb_perf  main.cc Generator.cc Parts.cc VertexEdge.cc KVEngine.cc  )
 target_compile_features(rocksdb_perf PRIVATE cxx_std_17)
 # rocksdb include and lib
 find_path(ROCKSDB_INCLUDE_DIR 
