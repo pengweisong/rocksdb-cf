@@ -39,7 +39,7 @@ void TestCF(PartId partId, bool needWait) {
     generator->stop();
   }
 }
-void TestDB(PartId partId) {
+void TestDB(PartId partId, bool needWait) {
   Options options;
   options.useCf = false;
   options.edgeNum = edgeNum;
@@ -50,17 +50,25 @@ void TestDB(PartId partId) {
   options.randomKey = false;
 
   std::unique_ptr<Generator> generator(new Generator(options));
-}
-void Test(PartId partId) {
-  TestCF(partId, true);
 
-  TestDB(partId);
+  generator->start(partId);
+
+  if (needWait) {
+    generator->wait();
+  } else {
+    generator->stop();  //这里直接stop有可能出现段错误
+    //因为Generator已经析构 而副线程还在使用Generator的成员变量
+  }
+}
+void Test(PartId partId, bool needWait) {
+  TestCF(partId, needWait);
+
+  TestDB(partId, needWait);
 }
 
 int main(int argc, char **argv) {
   bool needWait = true;
   if (argc > 1) needWait = false;
-  TestCF(0, needWait);
-  // Test(0);
+  Test(0, needWait);
   return 0;
 }
