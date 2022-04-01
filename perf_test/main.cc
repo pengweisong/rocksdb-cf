@@ -13,7 +13,7 @@
 #include "Options.h"
 
 static const std::string cfPartition = "/tmp/CF";
-static const std::string dbPartition = "/tmp/";  // rocksdb创建级联目录有坑
+static const std::string dbPartition = "/tmp/";  // Rocksdb cannot create a cascade directory
 static const int edgeNum = 1000;
 static const int vertexNum = 1000;
 static const int partNum = 10;
@@ -56,8 +56,9 @@ void TestDB(PartId partId, bool needWait) {
   if (needWait) {
     generator->wait();
   } else {
-    generator->stop();  //这里直接stop有可能出现段错误
-    //因为Generator已经析构 而副线程还在使用Generator的成员变量
+    generator->stop();  // segmentation fault may occur
+    // Because the Generator class is already destructed
+    // Another thread is using a destructed member variable
   }
 }
 void Test(PartId partId, bool needWait) {
