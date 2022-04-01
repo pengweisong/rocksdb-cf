@@ -4,9 +4,14 @@ project(rocksdb_test VERSION 0.1
                   DESCRIPTION "Performance test using RocksDB column family"
                   LANGUAGES CXX)
 
-add_executable(rocksdb_perf Vertex.h main.cc)
-target_compile_features(rocksdb_perf PRIVATE cxx_std_17)
+set(CMAKE_CXX_STANDARD 17)
 
+SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb ")
+
+
+
+add_executable(rocksdb_perf  main.cc Generator.cc Parts.cc Keys.cc KVEngine.cc Space.cc)
+target_compile_features(rocksdb_perf PRIVATE cxx_std_17)
 # rocksdb include and lib
 find_path(ROCKSDB_INCLUDE_DIR 
     NAMES rocksdb/db.h
