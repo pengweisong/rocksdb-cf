@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -9,39 +10,42 @@
 #include <string>
 #include <thread>
 
-#include "Generator.h"
 #include "Options.h"
+#include "PartTracker.h"
 
 static const std::string cfPartition = "/tmp/CF";
 static const std::string dbPartition = "/tmp/";  // rocksdb创建级联目录有坑
 static const int edgeNum = 1000;
-static const int vertexNum = 1000;
-static const int partNum = 10;
+static const int vertexNum = 10000;
+static const int partNum = 1000;
+static const int maxPartNum = 1000;
 static const int valueSize = 1000;
+static const int growthNum = 10;
 
-void TestCF(PartId partId, bool needWait) {
+void TestCF(PartId partId, int32_t initPartNum) {
   Options options;
   options.useCf = true;
+  options.randomKey = false;
+  options.threShold = Threshold::OP_Number;
   options.edgeNum = edgeNum;
   options.vertexNum = vertexNum;
   options.dataPath = cfPartition;
   options.valueSize = valueSize;
-  options.partNum = partNum;
-  options.randomKey = false;
+  options.partNum = initPartNum;
+  options.threadNum = initPartNum;
 
-  std::unique_ptr<Generator> generator(new Generator(options));
+  std::unique_ptr<PartTracker> partTracker(new PartTracker(options));
 
-  generator->start(partId);
+  partTracker->setMaxPartNum(partNum);
+  partTracker->setGrowthNum(growthNum);
 
-  if (needWait) {
-    generator->wait();
-  } else {
-    generator->stop();
-  }
+  partTracker->start();
 }
-void TestDB(PartId partId, bool needWait) {
+
+void TestDB(PartId partId, int32_t initPartNum) {
   Options options;
   options.useCf = false;
+  options.threShold = Threshold::OP_Number;
   options.edgeNum = edgeNum;
   options.vertexNum = vertexNum;
   options.dataPath = dbPartition;
@@ -49,26 +53,24 @@ void TestDB(PartId partId, bool needWait) {
   options.partNum = partNum;
   options.randomKey = false;
 
-  std::unique_ptr<Generator> generator(new Generator(options));
+  std::unique_ptr<PartTracker> partTracker(new PartTracker(options));
 
-  generator->start(partId);
+  partTracker->setMaxPartNum(partNum);
+  partTracker->setGrowthNum(growthNum);
 
-  if (needWait) {
-    generator->wait();
-  } else {
-    generator->stop();  //这里直接stop有可能出现段错误
-    //因为Generator已经析构 而副线程还在使用Generator的成员变量
-  }
+  partTracker->start();
 }
-void Test(PartId partId, bool needWait) {
-  TestCF(partId, needWait);
+void Test(PartId partId, int32_t initPartNum) {
+  TestCF(partId, initPartNum);
 
-  TestDB(partId, needWait);
+  TestDB(partId, initPartNum);
 }
 
 int main(int argc, char **argv) {
-  bool needWait = true;
-  if (argc > 1) needWait = false;
-  Test(0, needWait);
+  int32_t initPartNum = partNum;
+  if (argc > 1) {
+    initPartNum = atoi(argv[1]);
+  }
+  TestCF(0, initPartNum);
   return 0;
 }

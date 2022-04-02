@@ -4,9 +4,8 @@
 #include <iostream>
 
 #include "KVEngine.h"
+#include "Keys.h"
 #include "Options.h"
-#include "Parts.h"
-#include "VertexEdge.h"
 #include "rocksdb/db.h"
 #include "rocksdb/slice.h"
 
@@ -42,31 +41,6 @@ class Part {
                 std::vector<EdgeKey>* edges,
                 bool isInEdge);
 
-  KVEngine* engine_;
   PartId id_;
-};
-
-class Space {
- public:
-  Space(const Options& options);
-
-  void addVertex(PartId partId, const VertexKey& key, const rocksdb::Slice& value);
-
-  void removeVertex(PartId partId, const VertexKey& key);
-
-  void getVertex(PartId partId, const VertexKey& key, std::string* value);
-
-  void addEdge(PartId partId, const EdgeKey& key, const rocksdb::Slice& value);
-
-  void removeEdge(PartId partId, const EdgeKey& key);
-
-  void getEdge(PartId partId, const EdgeKey& key, std::string* value);
-
-  rocksdb::Iterator* newIterator(PartId partId);
-
-  ~Space();
-
- private:
-  Options options_;
-  std::map<PartId, std::unique_ptr<Part>> parts_;
+  KVEngine* engine_;
 };

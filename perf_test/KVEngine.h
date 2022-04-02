@@ -6,10 +6,15 @@
 class KVEngine {
  public:
   virtual rocksdb::DB* getDB() = 0;
-  virtual rocksdb::Iterator* newIterator() = 0;
+
   virtual void put(const rocksdb::Slice& k, const rocksdb::Slice& v) = 0;
+
   virtual void get(const rocksdb::Slice& k, std::string* v) = 0;
+
   virtual void remove(const rocksdb::Slice& k) = 0;
+
+  virtual rocksdb::Iterator* newIterator() = 0;
+
   virtual ~KVEngine() = 0;
 };
 

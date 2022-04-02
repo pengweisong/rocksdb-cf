@@ -1,5 +1,7 @@
 #include "KVEngine.h"
 
+#include <iostream>
+
 KVEngine::~KVEngine() {}
 
 CFEngine::CFEngine(rocksdb::DB* db, const std::string& cfName, const std::string& path) {
@@ -8,9 +10,17 @@ CFEngine::CFEngine(rocksdb::DB* db, const std::string& cfName, const std::string
 
   rocksdb::ColumnFamilyOptions options;
   rocksdb::DbPath dbPath;
+
   dbPath.path = path;
   options.cf_paths = {dbPath};
   auto s = db_->CreateColumnFamily(options, cfName, &cf_);
+  assert(s.ok());
+}
+
+CFEngine::~CFEngine() {
+  rocksdb::Status s = db_->DropColumnFamily(cf_);
+  assert(s.ok());
+  s = db_->DestroyColumnFamilyHandle(cf_);
   assert(s.ok());
 }
 
@@ -37,11 +47,11 @@ rocksdb::Iterator* CFEngine::newIterator() {
   return db_->NewIterator(rocksdb::ReadOptions(), cf_);
 }
 
-CFEngine::~CFEngine() {}
-
 WholeEngine::WholeEngine(rocksdb::DB* db) {
   db_ = db;
 }
+
+WholeEngine::~WholeEngine() {}
 
 rocksdb::DB* WholeEngine::getDB() {
   return db_;
@@ -65,5 +75,3 @@ void WholeEngine::remove(const rocksdb::Slice& key) {
 rocksdb::Iterator* WholeEngine::newIterator() {
   return db_->NewIterator(rocksdb::ReadOptions());
 }
-
-WholeEngine::~WholeEngine() {}

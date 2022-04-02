@@ -1,11 +1,14 @@
-#include <thread>
-
 #include "Generator.h"
+
+#include <thread>
 
 std::string Generator::kdefaultValue = "sakdjjiJKHSAKJ219012I0SLK";
 
 Generator::Generator(const Options& options)
-    : options_(options), space_(new Space(options_)), stop_(false) {}
+    : options_(options),
+      totalMeasurement_(options_.threadNum),
+      space_(new Space(options_)),
+      stop_(false) {}
 
 Generator::~Generator() {
   std::unique_lock<std::mutex> guard(mutex_);
@@ -13,21 +16,61 @@ Generator::~Generator() {
 }
 
 void Generator::doTask(PartId partId) {
+  std::unique_lock<std::mutex> guard(mutex_);
+
   addEdgeOrVertex(partId);
-  addEdgeOrVertex(partId, false);
-  if (stop_ == false) {
+  options_.threadNum--;
+  guard.unlock();
+
+  if (stop_ == false && options_.threadNum == 0) {
+    totalMeasurement_.setRequestType(RequestType::OP_AddVertex);
+    totalMeasurement_.showTime();
     stop_ = true;
     cv_.notify_one();
+  }
+}
+
+bool Generator::finished(Measurement* measurement,
+                         const Threshold& threshold,
+                         int32_t maxNum,
+                         int32_t num,
+                         int32_t duration) {
+  if (threshold == Threshold::OP_Number) {
+    if (num == maxNum) {
+      return true;
+    } else {
+      return false;
+    }
+  } else if (threshold == Threshold::OP_Time) {
+    Measurement lastTime;
+    lastTime.start();
+    if (std::chrono::duration_cast<std::chrono::seconds>(lastTime.getStartTime() -
+                                                         measurement->getStartTime())
+            .count() >= duration) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return true;
   }
 }
 
 void Generator::addEdgeOrVertex(PartId partId, bool addVertex) {
   int i = 0;
   RequestType type = (addVertex) ? RequestType::OP_AddVertex : RequestType::OP_AddEdge;
-  int32_t maxNum = (addVertex) ? options_.vertexNum : options_.edgeNum;
+  int32_t maxNum = 0;
+  int32_t duration = 0;
 
-  measurement_.setRequestType(type);
-  measurement_.start();
+  if (options_.threShold == Threshold::OP_Number) {
+    maxNum = (addVertex) ? options_.vertexNum : options_.edgeNum;
+  } else if (options_.threShold == Threshold::OP_Time) {
+    duration = options_.duration;
+  }
+
+  Measurement measurement;
+  measurement.setRequestType(type);
+  measurement.start();
 
   while (!stop_) {
     if (addVertex) {
@@ -36,58 +79,18 @@ void Generator::addEdgeOrVertex(PartId partId, bool addVertex) {
       space_->addEdge(partId, getEdgeKey(i), makeRandomString(options_.valueSize));
     }
     ++i;
-    if (i == maxNum) {
+    if (finished(&measurement, options_.threShold, maxNum, i, duration)) {
       break;
     }
   }
 
-  measurement_.stop();
-  measurement_.setRequestNum(i);
-  measurement_.showTime();
-}
+  measurement.stop();
+  measurement.setRequestNum(i);
+  measurement.calculateTime();
+  // measurement.showTime();
 
-void Generator::removeVertex(PartId partId) {
-  for (int32_t i = 0; i < options_.vertexNum; ++i) {
-    space_->removeVertex(partId, getVertexKey(i));
-  }
-}
-
-void Generator::getVertex(PartId partId, std::vector<std::string>* values) {
-  values->reserve(options_.vertexNum);
-  for (int32_t i = 0; i < options_.vertexNum; ++i) {
-    std::string value;
-    space_->getVertex(partId, getVertexKey(i), &value);
-    values->emplace_back(value);
-  }
-}
-
-void Generator::removeEdge(PartId partId) {
-  for (int32_t i = 0; i < options_.edgeNum; ++i) {
-    space_->removeEdge(partId, getEdgeKey(i));
-  }
-}
-
-void Generator::getEdge(PartId partId, std::vector<std::string>* values) {
-  values->reserve(options_.edgeNum);
-  for (int32_t i = 0; i < options_.edgeNum; ++i) {
-    std::string value;
-    space_->getEdge(partId, getEdgeKey(i), &value);
-    values->emplace_back(value);
-  }
-}
-
-void Generator::scanForNext(PartId partId) {
-  rocksdb::Iterator* iter = space_->newIterator(partId);
-
-  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-  }
-}
-
-void Generator::scanForPrev(PartId partId) {
-  rocksdb::Iterator* iter = space_->newIterator(partId);
-
-  for (iter->SeekToLast(); iter->Valid(); iter->Prev()) {
-  }
+  totalMeasurement_.addTime(measurement.getTotalTime());
+  totalMeasurement_.addRequestNum(measurement.getRequestNum());
 }
 
 VertexKey Generator::getVertexKey(int32_t num) {
@@ -115,6 +118,10 @@ EdgeKey Generator::getEdgeKey(int32_t num) {
 void Generator::start(PartId partId) {
   std::thread t(&Generator::doTask, this, partId);
   t.detach();
+}
+
+void Generator::startThisThread(PartId partId) {
+  doTask(partId);
 }
 
 void Generator::stop() {
