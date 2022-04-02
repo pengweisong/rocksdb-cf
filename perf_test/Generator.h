@@ -60,7 +60,6 @@ class Generator {
                 int32_t duration);
 
   Options options_;
-  Measurement singleMeasurement_;
   Measurement totalMeasurement_;
 
   std::unique_ptr<Space> space_;
