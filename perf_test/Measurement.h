@@ -10,11 +10,15 @@ enum RequestType : char { OP_AddVertex = 0x01, OP_AddEdge = 0x02 };
 class Measurement {
  public:
   Measurement() : totalTime_(0), threadNum_(1), requestNum_(0) {}
+
   Measurement(int32_t threadNum) : totalTime_(0), threadNum_(threadNum), requestNum_(0) {}
 
   void calculateTime() {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime_ - startTime_);
-    if (threadNum_ == 1) totalTime_ = duration.count();
+
+    if (threadNum_ == 1) {
+      totalTime_ = duration.count();
+    }
   }
 
   void showTime() {
@@ -49,6 +53,10 @@ class Measurement {
     endTime_ = std::chrono::steady_clock::now();
   }
 
+  void setThreadNum(int32_t threadNum) {
+    threadNum_ = threadNum;
+  }
+
   void setRequestNum(uint64_t requestNum) {
     requestNum_ = requestNum;
   }
@@ -79,6 +87,12 @@ class Measurement {
 
   std::chrono::steady_clock::time_point getEndTime() const {
     return endTime_;
+  }
+
+  void reset() {
+    totalTime_ = 0;
+    threadNum_ = 1;
+    requestNum_ = 0;
   }
 
  private:
