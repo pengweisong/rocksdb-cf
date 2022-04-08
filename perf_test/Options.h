@@ -14,8 +14,9 @@ struct Options {
   int32_t duration;
 
   int32_t valueSize;
-  int32_t threadNum;
   int32_t partNum;
+
+  int32_t threadRatio;  // Each part corresponds to several threads
 
   bool useCf;
   bool randomKey;
