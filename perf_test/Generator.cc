@@ -1,32 +1,27 @@
 #include "Generator.h"
 
-#include <thread>
-
 std::string Generator::kdefaultValue = "sakdjjiJKHSAKJ219012I0SLK";
 
 Generator::Generator(const Options& options)
     : options_(options),
-      totalMeasurement_(options_.threadNum),
       space_(new Space(options_)),
-      stop_(false) {}
+      stop_(false),
+      threadPtr_(nullptr),
+      finishThread_(0) {}
 
 Generator::~Generator() {
-  std::unique_lock<std::mutex> guard(mutex_);
-  while (!stop_) cv_.wait(guard);
+  if (!stop_) {
+    if (threadPtr_ != nullptr) threadPtr_->join();
+    stop_ = true;
+  }
 }
 
-void Generator::doTask(PartId partId) {
-  std::unique_lock<std::mutex> guard(mutex_);
+void Generator::doTask(PartId partId, std::promise<int>& requestNum) {
+  addEdgeOrVertex(partId, requestNum);
+  ++finishThread_;
 
-  addEdgeOrVertex(partId);
-  options_.threadNum--;
-  guard.unlock();
-
-  if (stop_ == false && options_.threadNum == 0) {
-    totalMeasurement_.setRequestType(RequestType::OP_AddVertex);
-    totalMeasurement_.showTime();
+  if (stop_ == false && options_.partNum * options_.threadRatio == finishThread_) {
     stop_ = true;
-    cv_.notify_one();
   }
 }
 
@@ -56,7 +51,7 @@ bool Generator::finished(Measurement* measurement,
   }
 }
 
-void Generator::addEdgeOrVertex(PartId partId, bool addVertex) {
+void Generator::addEdgeOrVertex(PartId partId, std::promise<int>& requestNum, bool addVertex) {
   int i = 0;
   RequestType type = (addVertex) ? RequestType::OP_AddVertex : RequestType::OP_AddEdge;
   int32_t maxNum = 0;
@@ -87,10 +82,8 @@ void Generator::addEdgeOrVertex(PartId partId, bool addVertex) {
   measurement.stop();
   measurement.setRequestNum(i);
   measurement.calculateTime();
-  // measurement.showTime();
 
-  totalMeasurement_.addTime(measurement.getTotalTime());
-  totalMeasurement_.addRequestNum(measurement.getRequestNum());
+  requestNum.set_value(measurement.getRequestNum());
 }
 
 VertexKey Generator::getVertexKey(int32_t num) {
@@ -115,18 +108,17 @@ EdgeKey Generator::getEdgeKey(int32_t num) {
   }
 }
 
-void Generator::start(PartId partId) {
-  std::thread t(&Generator::doTask, this, partId);
-  t.detach();
+void Generator::start(PartId partId, std::promise<int>& requestNum) {
+  std::thread t(&Generator::doTask, this, partId, std::ref(requestNum));
+  threadPtr_ = &t;
 }
 
-void Generator::startThisThread(PartId partId) {
-  doTask(partId);
+void Generator::startThisThread(PartId partId, std::promise<int>& requestNum) {
+  doTask(partId, requestNum);
 }
 
 void Generator::stop() {
   stop_ = true;
-  cv_.notify_one();
 }
 
 void Generator::wait() {}

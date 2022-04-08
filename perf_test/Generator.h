@@ -3,8 +3,10 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <future>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "Keys.h"
 #include "Measurement.h"
@@ -34,22 +36,22 @@ class Generator {
 
   ~Generator();
 
-  void start(PartId partId);
+  void start(PartId partId, std::promise<int>& requestNum);
 
-  void startThisThread(PartId partId);
+  void startThisThread(PartId partId, std::promise<int>& requestNum);
 
   void wait();
 
   void stop();
 
  private:
-  void addEdgeOrVertex(PartId partId, bool addVertex = true);
+  void addEdgeOrVertex(PartId partId, std::promise<int>& requestNum, bool addVertex = true);
 
   VertexKey getVertexKey(int32_t num);
 
   EdgeKey getEdgeKey(int32_t num);
 
-  void doTask(PartId partId);
+  void doTask(PartId partId, std::promise<int>& requestNum);
 
   static std::string makeRandomString(int32_t size);
 
@@ -60,13 +62,13 @@ class Generator {
                 int32_t duration);
 
   Options options_;
-  Measurement totalMeasurement_;
 
   std::unique_ptr<Space> space_;
 
   std::atomic<bool> stop_;
-  std::mutex mutex_;
-  std::condition_variable cv_;
+
+  std::thread* threadPtr_;
+  std::atomic<int> finishThread_;
 
   static std::string kdefaultValue;
 };
