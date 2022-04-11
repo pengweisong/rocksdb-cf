@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "Generator.h"
+#include "Measurement.h"
 #include "Options.h"
 
 class PartTracker {
@@ -33,4 +34,6 @@ class PartTracker {
   Options options_;
   int32_t maxPartNum_;
   int32_t growthNum_;
+
+  Measurement measurement_;
 };

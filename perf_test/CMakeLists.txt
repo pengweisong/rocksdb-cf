@@ -5,8 +5,11 @@ project(rocksdb_test VERSION 0.1
                   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE "Release")
+SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
-SET(CMAKE_CXX_FLAGS "-O0 -Wall -g -ggdb ")
+
+message(STATUS "cmake flag:" ${CMAKE_BUILD_TYPE})
 
 
 

@@ -6,6 +6,7 @@ Space::Space(const Options& options) : options_(options) {
     rocksdb::Options opts;
     opts.create_if_missing = true;
     rocksdb::Status s = rocksdb::DB::Open(opts, options_.dataPath, &db);
+    assert(s.ok());
 
     for (int i = 0; i < options_.partNum; ++i) {
       auto partId = static_cast<PartId>(i);

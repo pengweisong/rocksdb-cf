@@ -30,6 +30,7 @@ rocksdb::DB* CFEngine::getDB() {
 
 void CFEngine::put(const rocksdb::Slice& k, const rocksdb::Slice& v) {
   auto s = db_->Put(rocksdb::WriteOptions(), cf_, k, v);
+  if (!s.ok()) std::cout << s.ToString() << "\n";
   assert(s.ok());
 }
 
