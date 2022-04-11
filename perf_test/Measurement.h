@@ -99,9 +99,9 @@ class Measurement {
   std::chrono::steady_clock::time_point startTime_;
   std::chrono::steady_clock::time_point endTime_;
 
-  int64_t totalTime_;
+  int64_t totalTime_;  // microseconds
   int32_t threadNum_;
-
   uint64_t requestNum_;
+
   RequestType type_;
 };

@@ -2,7 +2,9 @@
 
 Part::Part(PartId id, KVEngine* engine) : id_(id), engine_(engine) {}
 
-Part::~Part() {}
+Part::~Part() {
+  delete engine_;
+}
 
 KVEngine* Part::getEngine() {
   return engine_;
@@ -27,6 +29,7 @@ void Part::addEdge(const EdgeKey& e, const rocksdb::Slice& value) {
 void Part::removeEdge(const EdgeKey& e) {
   engine_->remove(e.toString());
 }
+
 void Part::getEdge(const EdgeKey& e, std::string* value) {
   engine_->get(e.toString(), value);
 }
@@ -66,7 +69,7 @@ void Part::getEdges(const VertexKey& v,
     if (dst == v.id) {
       edges->emplace_back(EdgeKey::fromString(key));
     }
-  } else {  //出边
+  } else {  // out edge
     int32_t src = -1;
     ::memcpy(&src, static_cast<const void*>(key.data() + sizeof(int32_t)), sizeof(int32_t));
     if (src == v.id) {

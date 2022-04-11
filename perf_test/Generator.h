@@ -66,9 +66,8 @@ class Generator {
   std::unique_ptr<Space> space_;
 
   std::atomic<bool> stop_;
-
-  std::thread* threadPtr_;
   std::atomic<int> finishThread_;
+  std::thread* threadPtr_;
 
   static std::string kdefaultValue;
 };

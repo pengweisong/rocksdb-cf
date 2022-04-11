@@ -14,11 +14,10 @@ void PartTracker::start() {
   Options options = options_;
 
   while (options.partNum <= maxPartNum_) {
-    {
-      std::unique_ptr<Generator> generator(new Generator(options));
+    std::unique_ptr<Generator> generator(new Generator(options));
 
-      doTask(generator, options);
-    }
+    doTask(generator, options);
+
     RemoveDir(options);
     options.partNum += growthNum_;
   }
@@ -28,7 +27,7 @@ void PartTracker::doTask(const std::unique_ptr<Generator>& generator, const Opti
   std::cout << "PartitionNum " << options.partNum << "\n";
 
   std::vector<std::thread> threads;
-  int64_t threadNum = static_cast<int64_t>(options.partNum) * options.threadRatio;
+  int32_t threadNum = options.partNum * options.threadRatio;
   std::vector<std::promise<int>> promises(threadNum);
   std::vector<std::future<int>> futures;
 

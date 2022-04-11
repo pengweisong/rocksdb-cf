@@ -32,8 +32,8 @@ class PartTracker {
   std::string getPath(const std::string& suffixPath, const std::string& prefixPath);
 
   Options options_;
+  Measurement measurement_;
+
   int32_t maxPartNum_;
   int32_t growthNum_;
-
-  Measurement measurement_;
 };

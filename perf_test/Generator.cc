@@ -6,8 +6,8 @@ Generator::Generator(const Options& options)
     : options_(options),
       space_(new Space(options_)),
       stop_(false),
-      threadPtr_(nullptr),
-      finishThread_(0) {}
+      finishThread_(0),
+      threadPtr_(nullptr) {}
 
 Generator::~Generator() {
   if (!stop_) {
