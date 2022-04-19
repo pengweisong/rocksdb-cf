@@ -15,7 +15,7 @@
 #include "rocksdb/table.h"
 
 static const std::string cfPartition = "/data/CF";
-static const std::string dbPartition = "/data";  // rocksdb创建级联目录有坑
+static const std::string dbPartition = "/data";  // Rocksdb cannot create a cascade directory
 static const int edgeNum = 1000;
 static const int vertexNum = 10000;
 static const int partNum = 1000;
