@@ -10,22 +10,6 @@
 
 #include "Keys.h"
 #include "Measurement.h"
-#include "Options.h"
-#include "Parts.h"
-
-using PartId = int32_t;
-
-#pragma once
-
-#include <cstdint>
-#include <deque>
-#include <functional>
-#include <memory>
-#include <string>
-
-#include "Keys.h"
-#include "Measurement.h"
-#include "Options.h"
 #include "Space.h"
 
 using PartId = int32_t;
@@ -36,24 +20,30 @@ class Generator {
 
   ~Generator();
 
-  void start(PartId partId, std::promise<int>& requestNum);
+  void start(PartId partId, std::promise<std::pair<uint64_t, int64_t>>& pair);
 
-  void startThisThread(PartId partId, std::promise<int>& requestNum);
+  void startThisThread(PartId partId, std::promise<std::pair<uint64_t, int64_t>>& pair);
 
   void wait();
 
   void stop();
 
+  static void makeRandomString(int32_t size);
+
  private:
-  void addEdgeOrVertex(PartId partId, std::promise<int>& requestNum, bool addVertex = true);
+  void addEdgeOrVertex(PartId partId,
+                       std::promise<std::pair<uint64_t, int64_t>>& pair,
+                       bool addVertex = true);
+
+  void writeEdgeOrVertex(PartId partId,
+                         std::promise<std::pair<uint64_t, int64_t>>& pair,
+                         bool addVertex = true);
 
   VertexKey getVertexKey(int32_t num);
 
   EdgeKey getEdgeKey(int32_t num);
 
-  void doTask(PartId partId, std::promise<int>& requestNum);
-
-  static std::string makeRandomString(int32_t size);
+  void doTask(PartId partId, std::promise<std::pair<uint64_t, int64_t>>& pair);
 
   bool finished(Measurement* measurement,
                 const Threshold& threshold,
@@ -70,4 +60,6 @@ class Generator {
   std::thread* threadPtr_;
 
   static std::string kdefaultValue;
+
+  static constexpr int32_t CPUCore = {112};
 };

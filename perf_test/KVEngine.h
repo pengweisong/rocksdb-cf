@@ -7,7 +7,11 @@ class KVEngine {
  public:
   virtual rocksdb::DB* getDB() = 0;
 
+  virtual rocksdb::ColumnFamilyHandle* getCF() = 0;
+
   virtual void put(const rocksdb::Slice& k, const rocksdb::Slice& v) = 0;
+
+  virtual void write(rocksdb::WriteBatch* batch) = 0;
 
   virtual void get(const rocksdb::Slice& k, std::string* v) = 0;
 
@@ -24,7 +28,11 @@ class CFEngine : public KVEngine {
 
   rocksdb::DB* getDB() override;
 
+  rocksdb::ColumnFamilyHandle* getCF() override;
+
   void put(const rocksdb::Slice& k, const rocksdb::Slice& v) override;
+
+  void write(rocksdb::WriteBatch* batch) override;
 
   void get(const rocksdb::Slice& k, std::string* v) override;
 
@@ -46,7 +54,11 @@ class WholeEngine : public KVEngine {
 
   rocksdb::DB* getDB() override;
 
+  rocksdb::ColumnFamilyHandle* getCF() override;
+
   void put(const rocksdb::Slice& k, const rocksdb::Slice& v) override;
+
+  void write(rocksdb::WriteBatch* batch) override;
 
   void get(const rocksdb::Slice& k, std::string* v) override;
 

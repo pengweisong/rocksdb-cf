@@ -19,6 +19,8 @@ class Part {
 
   KVEngine* getEngine();
 
+  void write(rocksdb::WriteBatch* batch);
+
   void addVertex(const VertexKey& v, const rocksdb::Slice& value);
 
   void removeVertex(const VertexKey& v);

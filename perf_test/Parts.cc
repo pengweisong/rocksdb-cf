@@ -10,6 +10,10 @@ KVEngine* Part::getEngine() {
   return engine_;
 }
 
+void Part::write(rocksdb::WriteBatch* batch) {
+  engine_->write(batch);
+}
+
 void Part::addVertex(const VertexKey& v, const rocksdb::Slice& value) {
   engine_->put(v.toString(), value);
 }

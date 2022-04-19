@@ -27,13 +27,17 @@ class PartTracker {
 
   void RemoveDir(const Options& options);
 
-  void Remove(const std::string& suffixPath, const std::string& prefixPath);
+  void Remove(const std::string& prefixPath, const std::string& suffixPath);
 
   std::string getPath(const std::string& suffixPath, const std::string& prefixPath);
+
+  void adjustOptions(Options* options);
 
   Options options_;
   Measurement measurement_;
 
   int32_t maxPartNum_;
   int32_t growthNum_;
+
+  static constexpr int32_t CPUCore = {112};
 };

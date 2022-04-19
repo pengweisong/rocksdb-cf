@@ -7,6 +7,8 @@ class Space {
  public:
   Space(const Options& options);
 
+  void write(PartId partId, rocksdb::WriteBatch* batch);
+
   void addVertex(PartId partId, const VertexKey& key, const rocksdb::Slice& value);
 
   void removeVertex(PartId partId, const VertexKey& key);
@@ -20,6 +22,8 @@ class Space {
   void getEdge(PartId partId, const EdgeKey& key, std::string* value);
 
   rocksdb::Iterator* newIterator(PartId partId);
+
+  Part* getPart(PartId partId);
 
   ~Space();
 

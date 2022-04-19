@@ -11,6 +11,15 @@ CFEngine::CFEngine(rocksdb::DB* db, const std::string& cfName, const std::string
   rocksdb::ColumnFamilyOptions options;
   rocksdb::DbPath dbPath;
 
+  options.disable_auto_compactions = true;
+  options.write_buffer_size = 134217728;
+  options.max_write_buffer_number = 12;
+  options.max_bytes_for_level_base = 268435456;
+  options.level0_slowdown_writes_trigger = 999999;
+  options.level0_stop_writes_trigger = 999999;
+  options.soft_pending_compaction_bytes_limit = 137438953472;
+  options.hard_pending_compaction_bytes_limit = 274877906944;
+
   dbPath.path = path;
   options.cf_paths = {dbPath};
   auto s = db_->CreateColumnFamily(options, cfName, &cf_);
@@ -28,9 +37,17 @@ rocksdb::DB* CFEngine::getDB() {
   return db_;
 }
 
+rocksdb::ColumnFamilyHandle* CFEngine::getCF() {
+  return cf_;
+}
+
 void CFEngine::put(const rocksdb::Slice& k, const rocksdb::Slice& v) {
   auto s = db_->Put(rocksdb::WriteOptions(), cf_, k, v);
-  if (!s.ok()) std::cout << s.ToString() << "\n";
+  assert(s.ok());
+}
+
+void CFEngine::write(rocksdb::WriteBatch* batch) {
+  auto s = db_->Write(rocksdb::WriteOptions(), batch);
   assert(s.ok());
 }
 
@@ -58,8 +75,17 @@ rocksdb::DB* WholeEngine::getDB() {
   return db_;
 }
 
+rocksdb::ColumnFamilyHandle* WholeEngine::getCF() {
+  return nullptr;
+}
+
 void WholeEngine::put(const rocksdb::Slice& k, const rocksdb::Slice& v) {
   auto s = db_->Put(rocksdb::WriteOptions(), k, v);
+  assert(s.ok());
+}
+
+void WholeEngine::write(rocksdb::WriteBatch* batch) {
+  auto s = db_->Write(rocksdb::WriteOptions(), batch);
   assert(s.ok());
 }
 

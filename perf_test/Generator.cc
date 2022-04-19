@@ -1,6 +1,6 @@
 #include "Generator.h"
 
-std::string Generator::kdefaultValue = "sakdjjiJKHSAKJ219012I0SLK";
+std::string Generator::kdefaultValue = "";
 
 Generator::Generator(const Options& options)
     : options_(options),
@@ -11,16 +11,23 @@ Generator::Generator(const Options& options)
 
 Generator::~Generator() {
   if (!stop_) {
-    if (threadPtr_ != nullptr) threadPtr_->join();
+    if (threadPtr_ != nullptr) {
+      threadPtr_->join();
+    }
     stop_ = true;
   }
 }
 
-void Generator::doTask(PartId partId, std::promise<int>& requestNum) {
-  addEdgeOrVertex(partId, requestNum);
+void Generator::doTask(PartId partId, std::promise<std::pair<uint64_t, int64_t>>& requestNum) {
+  if (options_.useBatch) {
+    writeEdgeOrVertex(partId, requestNum);
+  } else {
+    addEdgeOrVertex(partId, requestNum);
+  }
+
   ++finishThread_;
 
-  if (stop_ == false && options_.partNum * options_.threadRatio == finishThread_) {
+  if (CPUCore == finishThread_) {
     stop_ = true;
   }
 }
@@ -30,13 +37,13 @@ bool Generator::finished(Measurement* measurement,
                          int32_t maxNum,
                          int32_t num,
                          int32_t duration) {
-  if (threshold == Threshold::OP_Number) {
+  if (threshold == Threshold::kOPNumber) {
     if (num == maxNum) {
       return true;
     } else {
       return false;
     }
-  } else if (threshold == Threshold::OP_Time) {
+  } else if (threshold == Threshold::kOPTime) {
     Measurement lastTime;
     lastTime.start();
     if (std::chrono::duration_cast<std::chrono::seconds>(lastTime.getStartTime() -
@@ -51,15 +58,18 @@ bool Generator::finished(Measurement* measurement,
   }
 }
 
-void Generator::addEdgeOrVertex(PartId partId, std::promise<int>& requestNum, bool addVertex) {
+void Generator::addEdgeOrVertex(PartId partId,
+                                std::promise<std::pair<uint64_t, int64_t>>& pair,
+                                bool addVertex) {
   int i = 0;
   RequestType type = (addVertex) ? RequestType::OP_AddVertex : RequestType::OP_AddEdge;
   int32_t maxNum = 0;
   int32_t duration = 0;
 
-  if (options_.threShold == Threshold::OP_Number) {
+  if (options_.threShold == Threshold::kOPNumber) {
     maxNum = (addVertex) ? options_.vertexNum : options_.edgeNum;
-  } else if (options_.threShold == Threshold::OP_Time) {
+
+  } else if (options_.threShold == Threshold::kOPTime) {
     duration = options_.duration;
   }
 
@@ -69,9 +79,9 @@ void Generator::addEdgeOrVertex(PartId partId, std::promise<int>& requestNum, bo
 
   while (!stop_) {
     if (addVertex) {
-      space_->addVertex(partId, getVertexKey(i), makeRandomString(options_.valueSize));
+      space_->addVertex(partId, getVertexKey(i), kdefaultValue);
     } else {
-      space_->addEdge(partId, getEdgeKey(i), makeRandomString(options_.valueSize));
+      space_->addEdge(partId, getEdgeKey(i), kdefaultValue);
     }
     ++i;
     if (finished(&measurement, options_.threShold, maxNum, i, duration)) {
@@ -83,7 +93,53 @@ void Generator::addEdgeOrVertex(PartId partId, std::promise<int>& requestNum, bo
   measurement.setRequestNum(i);
   measurement.calculateTime();
 
-  requestNum.set_value(measurement.getRequestNum());
+  pair.set_value({measurement.getRequestNum(), measurement.getTotalTime()});
+}
+
+void Generator::writeEdgeOrVertex(PartId partId,
+                                  std::promise<std::pair<uint64_t, int64_t>>& pair,
+                                  bool addVertex) {
+  int i = 0;
+  RequestType type = (addVertex) ? RequestType::OP_AddVertex : RequestType::OP_AddEdge;
+  int32_t maxNum = 0;
+  int32_t duration = 0;
+
+  if (options_.threShold == Threshold::kOPNumber) {
+    maxNum = (addVertex) ? options_.numOfBatch : options_.numOfBatch;
+    maxNum *= options_.entriesPerBatch;
+
+  } else if (options_.threShold == Threshold::kOPTime) {
+    duration = options_.duration;
+  }
+
+  rocksdb::ColumnFamilyHandle* cf = space_->getPart(partId)->getEngine()->getCF();
+  Measurement measurement;
+
+  measurement.setRequestType(type);
+  measurement.start();
+
+  bool exit = false;
+
+  while (!stop_) {
+    rocksdb::WriteBatch batch;
+    int32_t j = 0;
+    for (j = 0; j < options_.entriesPerBatch; ++j) {
+      batch.Put(cf, getVertexKey(i).toString(), kdefaultValue);
+      if (finished(&measurement, options_.threShold, maxNum, i, duration)) {
+        exit = true;
+        break;
+      }
+    }
+    if (exit) break;
+    space_->write(partId, &batch);
+    i += options_.entriesPerBatch;
+  }
+
+  measurement.stop();
+  measurement.setRequestNum(i);
+  measurement.calculateTime();
+
+  pair.set_value({measurement.getRequestNum(), measurement.getTotalTime()});
 }
 
 VertexKey Generator::getVertexKey(int32_t num) {
@@ -108,12 +164,13 @@ EdgeKey Generator::getEdgeKey(int32_t num) {
   }
 }
 
-void Generator::start(PartId partId, std::promise<int>& requestNum) {
+void Generator::start(PartId partId, std::promise<std::pair<uint64_t, int64_t>>& requestNum) {
   std::thread t(&Generator::doTask, this, partId, std::ref(requestNum));
   threadPtr_ = &t;
 }
 
-void Generator::startThisThread(PartId partId, std::promise<int>& requestNum) {
+void Generator::startThisThread(PartId partId,
+                                std::promise<std::pair<uint64_t, int64_t>>& requestNum) {
   doTask(partId, requestNum);
 }
 
@@ -123,13 +180,13 @@ void Generator::stop() {
 
 void Generator::wait() {}
 
-std::string Generator::makeRandomString(int32_t size) {
+void Generator::makeRandomString(int32_t size) {
   srand(clock());
-  std::string result;
-  result.reserve(size);
+
+  static const std::string temp = "asfoijqowjeo1290480";
+
   for (int32_t i = 0; i < size; ++i) {
-    int32_t index = rand() % kdefaultValue.size();
-    result.push_back(kdefaultValue[index]);
+    int32_t index = rand() % temp.size();
+    kdefaultValue.push_back(temp[index]);
   }
-  return result;
 }

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-enum Threshold : char { OP_Number, OP_Time };
+enum Threshold : char { kOPNumber, kOPTime };
 
 struct Options {
   Threshold threShold;
@@ -16,8 +16,10 @@ struct Options {
   int32_t valueSize;
   int32_t partNum;
 
-  int32_t threadRatio;  // Each part corresponds to several threads
+  int32_t entriesPerBatch;
+  int32_t numOfBatch;
 
+  bool useBatch;
   bool useCf;
   bool randomKey;
 
