@@ -1,31 +1,103 @@
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <cassert>
+#include <chrono>
 #include <cstdio>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
-#include "VertexEdge.h"
+#include "Options.h"
+#include "PartTracker.h"
+#include "rocksdb/table.h"
 
-std::string kDBPath = "/tmp/different_column_family_test";
+static const std::string cfPartition = "/data/CF";
+static const std::string dbPartition = "/data";  // Rocksdb cannot create a cascade directory
+static const int edgeNum = 1000;
+static const int vertexNum = 10000;
+static const int partNum = 1000;
+static const int maxPartNum = 1000;
+static const int valueSize = 50;
+static const int growthNum = 10;
 
-int main() {
-  Edge e;
-  e.type = 1;
-  e.src = 2;
-  e.dst = 3;
-  e.rank = 100;
-  e.version = 0;
+void TestCF(PartId partId, int32_t initPartNum) {
+  int num = 1;
 
-  auto s = e.toString();
-  auto e1 = Edge::fromString(s);
+  while (num <= 2) {
+    Options options;
+    options.useCf = true;
+    options.randomKey = false;
+    options.threShold = Threshold::kOPTime;
+    if (num > 1) {
+      std::cout << "Not Use Batch\n";
+      options.useBatch = false;
+    } else {
+      std::cout << "Use Batch\n";
+      options.useBatch = true;
+    }
+    options.duration = 1800;
+    options.numOfBatch = 1000;
+    options.entriesPerBatch = 300;
+    options.dataPath = cfPartition;
+    options.valueSize = valueSize;
+    options.partNum = initPartNum;
 
-  assert(e1.type == e.type);
-  assert(e1.src == e.src);
-  assert(e1.dst == e.dst);
-  assert(e1.rank == e.rank);
-  assert(e1.version == e.version);
+    std::unique_ptr<PartTracker> partTracker(new PartTracker(options));
 
-  std::cout << e1.rank << std::endl;
+    partTracker->setMaxPartNum(100);
+    partTracker->setGrowthNum(10);
 
+    partTracker->start();
+
+    num++;
+  }
+}
+
+void TestDB(PartId partId, int32_t initPartNum) {
+  int num = 1;
+
+  while (num <= 2) {
+    Options options;
+    options.useCf = false;
+    options.randomKey = false;
+    options.threShold = Threshold::kOPTime;
+    options.duration = 1800;
+    if (num > 1) {
+      std::cout << "Not Use Batch\n";
+      options.useBatch = false;
+    } else {
+      std::cout << "Use Batch\n";
+      options.useBatch = true;
+    }
+    options.entriesPerBatch = 300;
+    options.numOfBatch = 1000;
+    options.dataPath = dbPartition;
+    options.valueSize = valueSize;
+    options.partNum = initPartNum;
+
+    std::unique_ptr<PartTracker> partTracker(new PartTracker(options));
+
+    partTracker->setMaxPartNum(100);
+    partTracker->setGrowthNum(10);
+
+    partTracker->start();
+
+    num++;
+  }
+}
+
+void Test(PartId partId, int32_t initPartNum) {
+  std::cout << "============Test CF============\n";
+  TestCF(partId, initPartNum);
+  std::cout << "============Test DB============\n";
+  TestDB(partId, initPartNum);
+}
+
+int main(int argc, char **argv) {
+  int32_t initPartNum = 1;
+  Test(0, initPartNum);
   return 0;
 }
